@@ -1,4 +1,4 @@
-// Package pr finds an open GitHub pull request for a checked-out branch.
+// Package pr finds chat-mentioned GitHub pull requests in a checkout.
 package pr
 
 import (
@@ -20,9 +20,8 @@ const (
 )
 
 type key struct {
-	repo   string
-	branch string
-	hint   int
+	repo string
+	hint int
 }
 
 type entry struct {
@@ -33,30 +32,29 @@ type entry struct {
 // Reader keeps GitHub lookups out of the half-second poll path until due.
 type Reader struct {
 	cache map[key]entry
-	query func(context.Context, string, int, string) (int, error)
+	query func(context.Context, int, string) (int, error)
 }
 
 func New() *Reader {
-	return &Reader{cache: make(map[key]entry), query: githubLookup}
+	return &Reader{cache: make(map[key]entry), query: githubPR}
 }
 
-var prMention = regexp.MustCompile(`(?i)\bpr\s*#?([1-9][0-9]{0,8})\b`)
+var prMention = regexp.MustCompile(`(?i)\bpr\s*#([1-9][0-9]{0,8})\b`)
 
-// Mention reads an explicitly named PR from an agent's activity, if any.
+// Mention reads the latest explicit PR from one chat message.
 func Mention(activity string) int {
-	match := prMention.FindStringSubmatch(activity)
-	if len(match) < 2 {
+	matches := prMention.FindAllStringSubmatch(activity, -1)
+	if len(matches) == 0 {
 		return 0
 	}
 
-	number, _ := strconv.Atoi(match[1])
+	number, _ := strconv.Atoi(matches[len(matches)-1][1])
 
 	return number
 }
 
 func lookupKey(checkout git.Checkout, hint int) (key, bool) {
-	return key{repo: checkout.CommonDir, branch: checkout.Branch, hint: hint},
-		checkout.CommonDir != "" && (checkout.Branch != "" || hint > 0)
+	return key{repo: checkout.CommonDir, hint: hint}, checkout.CommonDir != "" && hint > 0
 }
 
 // Cached returns the last answer and whether it is fresh. An expired answer
@@ -75,8 +73,7 @@ func (r *Reader) Cached(checkout git.Checkout, hint int) (int, bool) {
 	return got.number, time.Now().Before(got.expires)
 }
 
-// Lookup asks GitHub about one branch. A failed lookup leaves the title alone
-// and is retried soon; a PR is refreshed less often.
+// Lookup verifies one chat-mentioned PR. A failed lookup keeps the last answer.
 func (r *Reader) Lookup(ctx context.Context, checkout git.Checkout, hint int, dir string) int {
 	k, valid := lookupKey(checkout, hint)
 	if !valid || dir == "" {
@@ -86,7 +83,7 @@ func (r *Reader) Lookup(ctx context.Context, checkout git.Checkout, hint int, di
 	queryCtx, cancel := context.WithTimeout(ctx, queryLimit)
 	defer cancel()
 
-	number, err := r.query(queryCtx, checkout.Branch, hint, dir)
+	number, err := r.query(queryCtx, hint, dir)
 	if err != nil {
 		return r.retryLater(k)
 	}
@@ -99,47 +96,6 @@ func (r *Reader) Lookup(ctx context.Context, checkout git.Checkout, hint int, di
 	r.cache[k] = entry{number: number, expires: time.Now().Add(ttl)}
 
 	return number
-}
-
-func githubLookup(ctx context.Context, branch string, hint int, dir string) (int, error) {
-	if hint > 0 {
-		return githubPR(ctx, hint, dir)
-	}
-
-	//nolint:gosec // Branch is passed as one gh argument, never through a shell.
-	cmd := exec.CommandContext(
-		ctx,
-		"gh",
-		"pr",
-		"list",
-		"--head",
-		branch,
-		"--state",
-		"open",
-		"--json",
-		"number",
-		"--limit",
-		"1",
-	)
-	cmd.Dir = dir
-
-	raw, err := cmd.Output()
-	if err != nil {
-		return 0, err
-	}
-
-	var prs []struct {
-		Number int `json:"number"`
-	}
-	if err := json.Unmarshal(raw, &prs); err != nil {
-		return 0, err
-	}
-
-	if len(prs) > 0 && prs[0].Number > 0 {
-		return prs[0].Number, nil
-	}
-
-	return 0, nil
 }
 
 func githubPR(ctx context.Context, number int, dir string) (int, error) {

@@ -193,19 +193,21 @@ active tab does not mistake its predecessor's label for a manual name. See
 ## Why PR numbers are opt-in
 
 `HERDR_AUTO_TITLE_PR_NUMBERS=true` uses an authenticated `gh` on the machine
-running Auto Title. The checked-out branch alone has no PR number, so this is
-the one feature that contacts an external service. The lookup is limited to
-one uncached branch per poll and two seconds, with positive answers cached for
+running Auto Title. A user or assistant message must explicitly mention
+`PR #675` in the current agent session. Herdr's integration supplies the
+session ID, and Auto Title reads only that session's transcript. A pane without
+a session ID or a transcript gets no PR number. The lookup is limited to
+one uncached PR per poll and two seconds, with positive answers cached for
 five minutes and misses for one minute. A failed lookup keeps the last known
 number and retries after thirty seconds. Without `gh` or authentication, the
 ordinary title remains usable.
 
-An activity that explicitly names `PR 649` can identify work even when the
-pane's checkout is on `main`. Auto Title asks GitHub for that number in the
-checkout's repository and uses it only while the PR is open. The number is
-parsed as digits and passed to `gh` as an argument, never to a shell. The
-cache key includes the mentioned number so a new activity cannot reuse the
-old PR from the same branch.
+The latest explicit mention remains attached to that session until another
+PR is mentioned or the session changes. Auto Title asks GitHub for that number
+in the checkout's repository and uses it only while the PR is open. The number
+is parsed as digits and passed to `gh` as an argument, never to a shell. The
+cache key includes the mentioned number and repository; other chats sharing
+the checkout cannot acquire a number without their own mention.
 
 ## Why it is not reread
 

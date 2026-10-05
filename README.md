@@ -82,10 +82,12 @@ $HOME                                  →  7 · Shell
   and restart it. A tab becomes `1 · [#663] trade › Fix login`; with workspace
   renaming enabled, its active workspace becomes `[#663] Fix login`. Without an
   open PR, the tab keeps its usual title and the workspace shows `Fix login`.
+  A chat must explicitly mention `PR #663` in a user or assistant message.
+  Auto Title verifies that PR is open in the chat's checkout, then keeps the
+  latest number for that chat until a different PR is mentioned or a new chat
+  starts. Chats in the same checkout have independent numbers. Herdr's agent
+  integration must report the chat's session ID; without it, no PR is shown.
   Lookups are cached, and a failed lookup leaves the last known number in place.
-  If an agent works from a checkout on `main` but its activity says `PR 649`,
-  Auto Title verifies that PR is open in the checkout's GitHub repository and
-  uses its number.
 - On Windows, Herdr reports only the shell or an agent running in a pane, so an
   editor or an ssh or mosh session does not name its tab.
 

@@ -84,7 +84,7 @@ type Config struct {
 	// a script or another agent addresses that pane by. Inert without
 	// RenamePanes.
 	ShowPaneID bool
-	// PRNumbers looks up open GitHub PRs for checked-out branches.
+	// PRNumbers verifies open GitHub PRs mentioned in agent chats.
 	PRNumbers bool
 	// ReportWorkspaces reports what each workspace's active tab is doing as its
 	// `topic` token. Herdr draws it only where the user's sidebar rows ask for

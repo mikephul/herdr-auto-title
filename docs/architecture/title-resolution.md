@@ -537,11 +537,11 @@ activity but drops its directory and branch. The matching tab keeps the
 directory and gains `[#663]` after its position, while the workspace reads
 `[#663] Fix login`. Without an open PR the tab is unchanged and the workspace
 reads `Fix login`. If there is no activity, the workspace falls back to its
-ordinary name. The PR comes from the agent's checkout when it has one, then
-the pane's own checkout; it never comes from a branch name or terminal text.
-An explicit `PR 649` in the agent's title takes precedence when GitHub
-confirms it is open in the checkout's repository, even if the checkout is on
-`main`. The lookup is described in
+ordinary name. The PR comes from an explicit `PR #number` in that agent
+session's user or assistant messages. GitHub confirms it is open in the
+agent's checkout when one is known, then the pane's own checkout. A session ID
+reported by Herdr's agent integration is required. Other chats sharing the
+checkout do not inherit the number. The lookup is described in
 [configuration](./configuration.md#why-pr-numbers-are-opt-in).
 
 ## The workspace is not repeated

@@ -93,6 +93,7 @@ func New(
 		manual:      state.LoadManual(cfg.ManualPath),
 		reads: reads.New(reads.Options{
 			ClaudeDirs:      cfg.ClaudeDirs,
+			Home:            cfg.Home,
 			BranchMax:       cfg.BranchMax,
 			ReadTranscripts: cfg.ReadTranscripts,
 			PRNumbers:       cfg.PRNumbers,

@@ -19,6 +19,7 @@ import (
 type Options struct {
 	// ClaudeDirs are the Claude Code configuration homes transcripts are found in.
 	ClaudeDirs []string
+	Home       string
 	// BranchMax of zero or less hides branches. PR lookups still need checkouts.
 	BranchMax       int
 	ReadTranscripts bool
@@ -34,6 +35,7 @@ type Reader struct {
 	readBranches    bool
 	readTranscripts bool
 	prs             *pr.Reader
+	conversations   *pr.Conversations
 }
 
 func New(opts Options, log *slog.Logger) *Reader {
@@ -46,6 +48,7 @@ func New(opts Options, log *slog.Logger) *Reader {
 	}
 	if opts.PRNumbers {
 		reader.prs = pr.New()
+		reader.conversations = pr.NewConversations(opts.Home, opts.ClaudeDirs)
 	}
 
 	return reader
@@ -57,6 +60,10 @@ func New(opts Options, log *slog.Logger) *Reader {
 func (r *Reader) Poll(client herdr.Client, panes []herdr.PaneInfo, drew map[string]bool) *Poll {
 	r.processes.observe(panes, drew)
 	r.topics.Retain(sessionsIn(panes))
+
+	if r.conversations != nil {
+		r.conversations.Retain(prSessionsIn(panes))
+	}
 
 	return &Poll{
 		reader:    r,
@@ -108,20 +115,44 @@ func (p *Poll) Fill(ctx context.Context, pane *state.PaneState) {
 
 	pane.AgentDir = topic.Dir
 	if p.reader.prs != nil {
-		checkout, checkoutDir := pane.Git, pane.Dir
-		if pane.AgentGit.Branch != "" && pane.AgentDir != "" {
-			checkout, checkoutDir = pane.AgentGit, pane.AgentDir
-		}
+		p.fillPR(ctx, pane, dir)
+	}
+}
 
-		hint := pr.Mention(pane.TerminalTitle)
-		number, fresh := p.reader.prs.Cached(checkout, hint)
-		pane.PRNumber = number
+func (p *Poll) fillPR(ctx context.Context, pane *state.PaneState, dir string) {
+	sessionID, hasSession := pane.AgentSession.IDFor(pane.Agent)
+	if !hasSession || spent(ctx) {
+		return
+	}
 
-		if !fresh && !p.prAttempted && !spent(ctx) {
-			p.prAttempted = true
-			pane.PRNumber = p.reader.prs.Lookup(ctx, checkout, hint, checkoutDir)
+	hint := p.reader.conversations.Mention(pr.Session{Agent: pane.Agent, ID: sessionID}, dir)
+	if hint == 0 {
+		return
+	}
+
+	checkout, checkoutDir := pane.Git, pane.Dir
+	if pane.AgentGit.Branch != "" && pane.AgentDir != "" {
+		checkout, checkoutDir = pane.AgentGit, pane.AgentDir
+	}
+
+	number, fresh := p.reader.prs.Cached(checkout, hint)
+	pane.PRNumber = number
+
+	if !fresh && !p.prAttempted && !spent(ctx) {
+		p.prAttempted = true
+		pane.PRNumber = p.reader.prs.Lookup(ctx, checkout, hint, checkoutDir)
+	}
+}
+
+func prSessionsIn(panes []herdr.PaneInfo) []pr.Session {
+	sessions := make([]pr.Session, 0, len(panes))
+	for _, pane := range panes {
+		if id, ok := pane.AgentSession.IDFor(pane.Agent); ok {
+			sessions = append(sessions, pr.Session{Agent: pane.Agent, ID: id})
 		}
 	}
+
+	return sessions
 }
 
 // processesOf reports what a pane is running, or false when Herdr gave no
