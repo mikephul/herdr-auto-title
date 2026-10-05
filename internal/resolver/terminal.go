@@ -34,10 +34,14 @@ func (s TerminalTitle) Resolve(pane *state.PaneState) (Parts, bool) {
 		title = pane.TerminalTitleRaw
 	}
 
-	if pane.AgentStatus == "blocked" {
-		// Codex's spaced marker loses its opening bracket in location cleanup.
-		if rest, ok := strings.CutPrefix(strings.TrimSpace(title), "[ . ] Action Required"); ok {
-			title = "[!] Action Required" + rest
+	marker := ""
+
+	if pane.Agent == "codex" {
+		// Standalone brackets vanish in location cleanup, so add them later.
+		if rest, ok := strings.CutPrefix(strings.TrimSpace(title), "[ . ] "); ok {
+			marker, title = "[ ]", rest
+		} else if rest, ok := strings.CutPrefix(strings.TrimSpace(title), "[ ! ] "); ok {
+			marker, title = "[!]", rest
 		}
 	}
 
@@ -55,5 +59,10 @@ func (s TerminalTitle) Resolve(pane *state.PaneState) (Parts, bool) {
 		return activityAs(pane, title, "")
 	}
 
-	return activityFrom(pane, title)
+	parts, ok := activityFrom(pane, title)
+	if ok && marker != "" {
+		parts.Activity = marker + " " + parts.Activity
+	}
+
+	return parts, ok
 }

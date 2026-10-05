@@ -37,28 +37,44 @@ func TestTerminalTitleBeatsTheWorkingDirectory(t *testing.T) {
 	}
 }
 
-func TestBlockedCodexTitleKeepsABalancedActionMarker(t *testing.T) {
+func TestCodexStatusMarkersKeepBothBrackets(t *testing.T) {
 	t.Parallel()
 
-	pane := &state.PaneState{
-		Dir:           dashboard,
-		Agent:         "codex",
-		AgentStatus:   "blocked",
-		TerminalTitle: "[ . ] Action Required | Replace profiler mock data | trade",
-	}
+	for _, tc := range []struct {
+		title string
+		want  string
+	}{
+		{
+			title: "[ . ] Action Required | Replace profiler mock data | trade",
+			want:  "[ ] Action Required | Replace profiler mock data | trade",
+		},
+		{
+			title: "[ ! ] Action Required | Replace profiler mock data | trade",
+			want:  "[!] Action Required | Replace profiler mock data | trade",
+		},
+	} {
+		t.Run(tc.want, func(t *testing.T) {
+			t.Parallel()
 
-	got, ok := NewTerminalTitle().Resolve(pane)
-	if !ok || got.Activity != "[!] Action Required | Replace profiler mock data | trade" {
-		t.Errorf("activity = %q, found = %v", got.Activity, ok)
-	}
+			pane := &state.PaneState{
+				Dir:           dashboard,
+				Agent:         "codex",
+				AgentStatus:   "blocked",
+				TerminalTitle: tc.title,
+			}
 
-	workspaces := NewWorkspaces(Options{HideAgentName: true}, 0)
+			got, ok := NewTerminalTitle().Resolve(pane)
+			if !ok || got.Activity != tc.want {
+				t.Errorf("activity = %q, found = %v, want %q", got.Activity, ok, tc.want)
+			}
 
-	workspaces.PRNumbers = true
-	if got := workspaces.Resolve(
-		pane,
-	).Name; got != "[!] Action Required | Replace profiler mock data | trade" {
-		t.Errorf("workspace = %q", got)
+			workspaces := NewWorkspaces(Options{HideAgentName: true}, 0)
+
+			workspaces.PRNumbers = true
+			if got := workspaces.Resolve(pane).Name; got != tc.want {
+				t.Errorf("workspace = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
 
