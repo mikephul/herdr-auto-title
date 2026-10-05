@@ -83,6 +83,9 @@ $HOME                                  →  7 · Shell
   renaming enabled, its active workspace becomes `[#663] Fix login`. Without an
   open PR, the tab keeps its usual title and the workspace shows `Fix login`.
   Lookups are cached, and a failed lookup leaves the last known number in place.
+  If an agent works from a checkout on `main` but its activity says `PR 649`,
+  Auto Title verifies that PR is open in the checkout's GitHub repository and
+  uses its number.
 - On Windows, Herdr reports only the shell or an agent running in a pane, so an
   editor or an ssh or mosh session does not name its tab.
 

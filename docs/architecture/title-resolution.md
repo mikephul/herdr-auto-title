@@ -530,7 +530,10 @@ directory and gains `[#663]` after its position, while the workspace reads
 reads `Fix login`. If there is no activity, the workspace falls back to its
 ordinary name. The PR comes from the agent's checkout when it has one, then
 the pane's own checkout; it never comes from a branch name or terminal text.
-The lookup is described in [configuration](./configuration.md#why-pr-numbers-are-opt-in).
+An explicit `PR 649` in the agent's title takes precedence when GitHub
+confirms it is open in the checkout's repository, even if the checkout is on
+`main`. The lookup is described in
+[configuration](./configuration.md#why-pr-numbers-are-opt-in).
 
 ## The workspace is not repeated
 

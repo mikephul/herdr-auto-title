@@ -200,6 +200,13 @@ five minutes and misses for one minute. A failed lookup keeps the last known
 number and retries after thirty seconds. Without `gh` or authentication, the
 ordinary title remains usable.
 
+An activity that explicitly names `PR 649` can identify work even when the
+pane's checkout is on `main`. Auto Title asks GitHub for that number in the
+checkout's repository and uses it only while the PR is open. The number is
+parsed as digits and passed to `gh` as an argument, never to a shell. The
+cache key includes the mentioned number so a new activity cannot reuse the
+old PR from the same branch.
+
 ## Why it is not reread
 
 The file is read once. Half the settings are consumed in `main.run` while it

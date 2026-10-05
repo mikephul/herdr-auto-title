@@ -113,12 +113,13 @@ func (p *Poll) Fill(ctx context.Context, pane *state.PaneState) {
 			checkout, checkoutDir = pane.AgentGit, pane.AgentDir
 		}
 
-		number, fresh := p.reader.prs.Cached(checkout)
+		hint := pr.Mention(pane.TerminalTitle)
+		number, fresh := p.reader.prs.Cached(checkout, hint)
 		pane.PRNumber = number
 
 		if !fresh && !p.prAttempted && !spent(ctx) {
 			p.prAttempted = true
-			pane.PRNumber = p.reader.prs.Lookup(ctx, checkout, checkoutDir)
+			pane.PRNumber = p.reader.prs.Lookup(ctx, checkout, hint, checkoutDir)
 		}
 	}
 }
