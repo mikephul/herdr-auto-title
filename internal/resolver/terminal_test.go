@@ -78,6 +78,34 @@ func TestCodexStatusMarkersKeepBothBrackets(t *testing.T) {
 	}
 }
 
+func TestDroidTerminalTitleDropsItsIcon(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		name  string
+		agent string
+		title string
+		want  string
+	}{
+		{name: "droid topic", agent: "droid", title: "⛬ Create Screener worktree", want: "dashboard › Create Screener worktree"},
+		{name: "droid echo", agent: "droid", title: "⛬ Droid", want: "dashboard"},
+		{name: "other agent", agent: "claude", title: "⛬ Create Screener worktree", want: "dashboard › ⛬ Create Screener worktree"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := hiddenAgentChain().Resolve(tabWithPane(&state.PaneState{
+				Dir:           dashboard,
+				Agent:         tc.agent,
+				TerminalTitle: tc.title,
+			}))
+			if got.Name != tc.want {
+				t.Errorf("name = %q, want %q", got.Name, tc.want)
+			}
+		})
+	}
+}
+
 func TestGenericTerminalTitleFallsThrough(t *testing.T) {
 	t.Parallel()
 

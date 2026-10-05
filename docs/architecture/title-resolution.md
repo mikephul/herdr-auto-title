@@ -110,6 +110,10 @@ opening brackets would be dropped by location cleanup, leaving `. ]` or
 `! ]` at the start. The terminal source holds the marker aside during cleanup
 and restores it as `[ ]` or `[!]` in the finished activity.
 
+Herdr recognizes Droid as an agent but leaves its `⛬` terminal icon in the
+stripped title. Auto Title removes that icon for Droid before treating the rest
+as activity, so the workspace and tab show the session name without branding.
+
 ### The session transcript
 
 An agent that has titled its terminal has already said what it is doing, sooner

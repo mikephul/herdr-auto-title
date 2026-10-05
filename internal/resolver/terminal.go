@@ -36,13 +36,17 @@ func (s TerminalTitle) Resolve(pane *state.PaneState) (Parts, bool) {
 
 	marker := ""
 
-	if pane.Agent == "codex" {
+	switch pane.Agent {
+	case "codex":
 		// Standalone brackets vanish in location cleanup, so add them later.
 		if rest, ok := strings.CutPrefix(strings.TrimSpace(title), "[ . ] "); ok {
 			marker, title = "[ ]", rest
 		} else if rest, ok := strings.CutPrefix(strings.TrimSpace(title), "[ ! ] "); ok {
 			marker, title = "[!]", rest
 		}
+	case "droid":
+		// Droid's terminal icon is branding, not part of the activity.
+		title = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(title), "⛬"))
 	}
 
 	// A shell titles its window with the command it runs, so until the remote
