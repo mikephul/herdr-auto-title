@@ -535,10 +535,10 @@ label only when configured. An empty resolution leaves the label alone.
 With `HERDR_AUTO_TITLE_PR_NUMBERS=true`, a workspace keeps the active tab's
 activity but drops its directory and branch. The matching tab keeps the
 directory and gains `[#663]` after its position, while the workspace reads
-`[#663] Fix login`. Without an open PR the tab is unchanged and the workspace
+`[#663] Fix login`. Without a PR mention the tab is unchanged and the workspace
 reads `Fix login`. If there is no activity, the workspace falls back to its
 ordinary name. The PR comes from an explicit `PR #number` in that agent
-session's user or assistant messages. GitHub confirms it is open in the
+session's user or assistant messages. GitHub confirms it exists in the
 agent's checkout when one is known, then the pane's own checkout. A session ID
 reported by Herdr's agent integration is required. Other chats sharing the
 checkout do not inherit the number. The lookup is described in

@@ -101,7 +101,7 @@ func (r *Reader) Lookup(ctx context.Context, checkout git.Checkout, hint int, di
 func githubPR(ctx context.Context, number int, dir string) (int, error) {
 	//nolint:gosec // The checked numeric PR ID is an argument, never shell text.
 	cmd := exec.CommandContext(ctx, "gh", "pr", "view",
-		strconv.Itoa(number), "--json", "number,state")
+		strconv.Itoa(number), "--json", "number")
 	cmd.Dir = dir
 
 	raw, err := cmd.Output()
@@ -110,14 +110,13 @@ func githubPR(ctx context.Context, number int, dir string) (int, error) {
 	}
 
 	var found struct {
-		Number int    `json:"number"`
-		State  string `json:"state"`
+		Number int `json:"number"`
 	}
 	if err := json.Unmarshal(raw, &found); err != nil {
 		return 0, err
 	}
 
-	if found.Number == number && found.State == "OPEN" {
+	if found.Number == number {
 		return number, nil
 	}
 

@@ -204,7 +204,7 @@ ordinary title remains usable.
 
 The latest explicit mention remains attached to that session until another
 PR is mentioned or the session changes. Auto Title asks GitHub for that number
-in the checkout's repository and uses it only while the PR is open. The number
+in the checkout's repository and uses it even after the PR closes. The number
 is parsed as digits and passed to `gh` as an argument, never to a shell. The
 cache key includes the mentioned number and repository; other chats sharing
 the checkout cannot acquire a number without their own mention.
