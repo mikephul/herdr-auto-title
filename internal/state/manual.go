@@ -13,8 +13,9 @@ import (
 // stops naming them. A rename is not an event but a label that
 // moved between two polls; see docs/architecture/manual-rename-protection.md.
 type Manual struct {
-	Tabs  *Claims
-	Panes *Claims
+	Tabs       *Claims
+	Panes      *Claims
+	Workspaces *Claims
 
 	mu   sync.Mutex
 	path string
@@ -26,8 +27,11 @@ type Manual struct {
 // Claims is what is remembered about one kind of thing Herdr labels. Herdr
 // numbers each kind apart, so each keeps claims of its own.
 type Claims struct {
-	manual *Manual
-	seen   map[string]labels
+	// written is persisted only for workspaces, whose existing custom names
+	// must be protected on the first poll as well.
+	written map[string]string
+	manual  *Manual
+	seen    map[string]labels
 	// locked is the label a thing carried when the user claimed it. The label,
 	// not the id, is what makes a reloaded lock safe: Herdr reuses ids.
 	locked map[string]string
@@ -61,8 +65,10 @@ func newClaims(m *Manual, followsMoves bool) *Claims {
 // manualFile is the on-disk form: locks outlive the process because Herdr can
 // restart a plugin mid-session.
 type manualFile struct {
-	Locked      map[string]string `json:"locked_tabs"`
-	LockedPanes map[string]string `json:"locked_panes"`
+	Locked            map[string]string `json:"locked_tabs"`
+	LockedPanes       map[string]string `json:"locked_panes"`
+	LockedWorkspaces  map[string]string `json:"locked_workspaces,omitempty"`
+	WrittenWorkspaces map[string]string `json:"written_workspaces,omitempty"`
 }
 
 // LoadManual reads persisted locks from path. Anything unreadable yields an
@@ -71,6 +77,8 @@ func LoadManual(path string) *Manual {
 	m := &Manual{path: path}
 	m.Tabs = newClaims(m, false)
 	m.Panes = newClaims(m, true)
+	m.Workspaces = newClaims(m, false)
+	m.Workspaces.written = make(map[string]string)
 
 	raw, err := os.ReadFile(path) //nolint:gosec // the path is configured, never terminal-derived
 	if err != nil {
@@ -84,6 +92,8 @@ func LoadManual(path string) *Manual {
 
 	maps.Copy(m.Tabs.locked, stored.Locked)
 	maps.Copy(m.Panes.locked, stored.LockedPanes)
+	maps.Copy(m.Workspaces.locked, stored.LockedWorkspaces)
+	maps.Copy(m.Workspaces.written, stored.WrittenWorkspaces)
 
 	return m
 }
@@ -150,7 +160,16 @@ func (c *Claims) Observe(s Sighting) Verdict {
 
 	previous, known := c.seen[s.ID]
 	_, moved := c.departed[s.Current]
+
 	ours := c.ours(s) || (!known && moved)
+	if written, ok := c.written[s.ID]; ok && written == s.Current {
+		ours = true
+	}
+
+	if ours && s.Current != "" {
+		c.keepWritten(s.ID, s.Current)
+	}
+
 	c.record(s, previous)
 
 	return c.claimedOnChange(s, previous, known, ours)
@@ -164,7 +183,7 @@ func (m *Manual) Settled() {
 
 	m.settled = true
 
-	for _, c := range []*Claims{m.Tabs, m.Panes} {
+	for _, c := range []*Claims{m.Tabs, m.Panes, m.Workspaces} {
 		clear(c.departed)
 	}
 }
@@ -178,6 +197,7 @@ func (c *Claims) Applied(id, label string) {
 	seen := c.seen[id]
 	seen.current = label
 	c.seen[id] = seen
+	c.keepWritten(id, label)
 }
 
 // Sent records the label of a rename whose call got no answer, which Herdr
@@ -194,6 +214,7 @@ func (c *Claims) Sent(id, label string) {
 
 	seen.sent[label] = struct{}{}
 	c.seen[id] = seen
+	c.keepWritten(id, label)
 }
 
 // Retain drops everything about what the session no longer holds, and releases
@@ -225,8 +246,23 @@ func (c *Claims) Retain(live map[string]string) {
 		}
 	}
 
+	for id := range c.written {
+		if _, alive := live[id]; !alive {
+			delete(c.written, id)
+
+			changed = true
+		}
+	}
+
 	if changed {
 		m.saveLocked()
+	}
+}
+
+func (c *Claims) keepWritten(id, label string) {
+	if c.written != nil && c.written[id] != label {
+		c.written[id] = label
+		c.manual.saveLocked()
 	}
 }
 
@@ -265,7 +301,7 @@ func (c *Claims) claimedOnChange(s Sighting, previous labels, known, ours bool) 
 		if s.Current == previous.current {
 			return VerdictName
 		}
-	case !c.manual.settled:
+	case !c.manual.settled && c.written == nil:
 		// The first poll, where nothing carries a name Auto Title has set.
 		return VerdictName
 	}
@@ -302,8 +338,10 @@ func (m *Manual) saveLocked() {
 	// encoding/json sorts map keys itself, so the file is diffable already.
 	raw, err := json.MarshalIndent(
 		manualFile{
-			Locked:      m.Tabs.locked,
-			LockedPanes: m.Panes.locked,
+			Locked:            m.Tabs.locked,
+			LockedPanes:       m.Panes.locked,
+			LockedWorkspaces:  m.Workspaces.locked,
+			WrittenWorkspaces: m.Workspaces.written,
 		},
 		"",
 		"  ",

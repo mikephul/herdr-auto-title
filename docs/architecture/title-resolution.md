@@ -513,6 +513,16 @@ The topic is cut only when `HERDR_AUTO_TITLE_WORKSPACE_MAX_LENGTH` is set. By
 default it is sent whole and Herdr fits it to the sidebar, which knows how wide
 it is; a guessed width would be wrong at every other one.
 
+## Opt-in workspace names
+
+`Workspaces` resolves the active tab's pane through the default tab chain,
+including the foreground process. Its label keeps all title parts rather than
+suppressing the project under its current workspace label, and has no position
+prefix. This makes its result independent of the label it replaces and avoids
+alternating between a full title and a title with its project removed. The
+agent-name and branch settings apply, and `WORKSPACE_MAX_LENGTH` bounds the
+label only when configured. An empty resolution leaves the label alone.
+
 ## The workspace is not repeated
 
 Herdr shows the workspace above its tabs, so a tab in the workspace it is named

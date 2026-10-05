@@ -39,6 +39,11 @@ type PaneRenameCall struct {
 	Label  string
 }
 
+type WorkspaceRenameCall struct {
+	WorkspaceID string
+	Label       string
+}
+
 // WorkspaceReportCall is one workspace.report_metadata the stub received. A nil
 // token value is a clear.
 type WorkspaceReportCall struct {
@@ -51,21 +56,23 @@ type WorkspaceReportCall struct {
 // Client is an in-memory herdr.Client. Tests change the session it describes
 // and inspect the renames it received.
 type Client struct {
-	mu               sync.Mutex
-	workspaces       []herdr.WorkspaceInfo
-	tabs             map[string]herdr.TabInfo
-	panes            map[string]herdr.PaneInfo
-	processes        map[string][]herdr.PaneProcessInfoProcess
-	renames          []RenameCall
-	paneRenames      []PaneRenameCall
-	workspaceReports []WorkspaceReportCall
-	renameErr        error
-	reportErr        error
-	processErr       error
-	processErrOnce   error
-	callErr          error
-	reads            int
-	server           string
+	mu                 sync.Mutex
+	workspaces         []herdr.WorkspaceInfo
+	tabs               map[string]herdr.TabInfo
+	panes              map[string]herdr.PaneInfo
+	processes          map[string][]herdr.PaneProcessInfoProcess
+	renames            []RenameCall
+	paneRenames        []PaneRenameCall
+	workspaceRenames   []WorkspaceRenameCall
+	workspaceRenameErr error
+	workspaceReports   []WorkspaceReportCall
+	renameErr          error
+	reportErr          error
+	processErr         error
+	processErrOnce     error
+	callErr            error
+	reads              int
+	server             string
 }
 
 var _ herdr.Client = (*Client)(nil)
@@ -203,6 +210,20 @@ func (s *Client) PaneRenames() []PaneRenameCall {
 	return slices.Clone(s.paneRenames)
 }
 
+func (s *Client) WorkspaceRenames() []WorkspaceRenameCall {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return slices.Clone(s.workspaceRenames)
+}
+
+func (s *Client) SetWorkspaceRenameError(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.workspaceRenameErr = err
+}
+
 func (s *Client) WorkspaceReports() []WorkspaceReportCall {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -247,6 +268,9 @@ func (s *Client) Call(ctx context.Context, method string, params any, result any
 
 	case herdr.MethodPaneRename:
 		return s.renamePane(params)
+
+	case herdr.MethodWorkspaceRename:
+		return s.renameWorkspace(params)
 
 	case herdr.MethodWorkspaceReportMetadata:
 		return s.reportMetadata(params)
@@ -329,6 +353,28 @@ func (s *Client) renamePane(params any) error {
 	s.paneRenames = append(s.paneRenames, PaneRenameCall(call))
 
 	return nil
+}
+
+func (s *Client) renameWorkspace(params any) error {
+	if s.workspaceRenameErr != nil && !errors.Is(s.workspaceRenameErr, herdr.ErrUnanswered) {
+		return s.workspaceRenameErr
+	}
+
+	var call herdr.WorkspaceRenameParams
+	if err := decode(params, &call); err != nil {
+		return err
+	}
+
+	for i, workspace := range s.workspaces {
+		if workspace.WorkspaceID == call.WorkspaceID {
+			s.workspaces[i].Label = call.Label
+			s.workspaceRenames = append(s.workspaceRenames, WorkspaceRenameCall(call))
+
+			return s.workspaceRenameErr
+		}
+	}
+
+	return &herdr.APIError{Code: herdr.CodeWorkspaceNotFound, Message: "workspace not found"}
 }
 
 func (s *Client) reportMetadata(params any) error {

@@ -36,7 +36,7 @@ func isolate(t *testing.T) {
 	names := []string{
 		EnvDebug, EnvPoll, EnvMaxLength, EnvBranchMax,
 		EnvPosition, EnvManual, EnvTranscript, EnvAgentName, EnvPanes,
-		EnvPreferAgent, EnvPaneID, EnvWorkspaces, EnvWorkspaceMaxLength,
+		EnvPreferAgent, EnvPaneID, EnvRenameWorkspaces, EnvWorkspaces, EnvWorkspaceMaxLength,
 		// Claude Code's own variable is cleared with ours: it now decides a
 		// Config field, so a developer's real home would otherwise be read.
 		EnvClaudeDirs, EnvClaudeConfigDir,
@@ -549,5 +549,28 @@ func TestLoadConfigAcceptsConfigHomesItCanUse(t *testing.T) {
 
 	if _, warnings := LoadConfig(); len(warnings) != 0 {
 		t.Errorf("warnings = %v, want none", warnings)
+	}
+}
+
+func TestWorkspaceRenamingIsOptIn(t *testing.T) {
+	isolate(t)
+
+	cfg, _ := LoadConfig()
+	if cfg.RenameWorkspaces {
+		t.Fatal("workspace renaming is enabled by default")
+	}
+
+	t.Setenv(EnvRenameWorkspaces, "true")
+
+	cfg, warnings := LoadConfig()
+	if !cfg.RenameWorkspaces || len(warnings) != 0 {
+		t.Fatalf("enabled: config=%+v warnings=%v", cfg, warnings)
+	}
+
+	t.Setenv(EnvRenameWorkspaces, "invalid")
+
+	cfg, warnings = LoadConfig()
+	if cfg.RenameWorkspaces || len(warnings) != 1 {
+		t.Fatalf("invalid: config=%+v warnings=%v", cfg, warnings)
 	}
 }

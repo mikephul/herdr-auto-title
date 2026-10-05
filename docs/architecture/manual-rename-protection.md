@@ -159,7 +159,7 @@ per kind — `Manual.Tabs` and `Manual.Panes` — and each runs it over ids of i
 own. Locks for both live in the same file, panes under `locked_panes`, so a
 store written by an older version reads back unchanged. A store from a version
 that named workspaces also carries `locked_workspaces` and `written_workspaces`;
-those are ignored on load and gone from the next save.
+those are loaded and preserved for opt-in workspace renaming.
 
 Two things differ, both because Herdr labels a pane differently from a tab.
 
@@ -206,3 +206,21 @@ arrives separately from the question. A poll asks and is answered in the same
 breath: either the label is the one Auto Title set, or it is not. What survives
 of the idea is a single remembered label per tab, pruned to the live session on
 every poll rather than by a clock.
+
+## Workspace names
+
+`HERDR_AUTO_TITLE_RENAME_WORKSPACES` gives workspaces their own `Claims`.
+Unlike tabs and panes, a workspace with an existing custom label is protected
+on its first sighting. A label matching any of that workspace's panes' shell
+directory basenames is treated as Herdr's default. The foreground process's
+directory is unsuitable because a child can run elsewhere. The snapshot does
+not expose whether Herdr considers a label automatic, so a manual name equal
+to a shell directory basename cannot be distinguished from that default.
+
+Once renamed, the workspace follows the active tab. A changed label that is
+neither the default nor one of the plugin's labels becomes a manual lock.
+Clearing the label releases that lock. Empty workspaces are left alone.
+`locked_workspaces` persists manual names and `written_workspaces` persists
+the last name applied or sent without an answer. A restarted plugin recognizes
+that name even when the active tab or activity has changed. Closed workspaces
+are forgotten, and the tab and pane claims remain separate.

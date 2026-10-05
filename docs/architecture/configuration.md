@@ -175,6 +175,21 @@ name, so an existing `config.env` still means on or off.
 reason the row stopped being renamed: Herdr knows how wide the sidebar is and
 fits the topic to it, while any width set here is a guess.
 
+## Why workspace renaming is opt-in
+
+`HERDR_AUTO_TITLE_RENAME_WORKSPACES=true` names each workspace from its active
+tab, independently of `HERDR_AUTO_TITLE_WORKSPACES`, which still reports
+`$topic`. Renaming freezes Herdr's automatic directory labels and leaves the
+last generated name after the setting is disabled, so it defaults to false.
+The name uses the tab's sources, including the foreground process, with its
+project included and its tab position omitted. `WORKSPACE_MAX_LENGTH` bounds
+both names and topics when set; otherwise they are sent whole.
+
+Existing custom workspace names are protected on first sight. Labels written
+by the plugin are persisted beside manual locks so restarting with a changed
+active tab does not mistake its predecessor's label for a manual name. See
+[manual rename protection](./manual-rename-protection.md#workspace-names).
+
 ## Why it is not reread
 
 The file is read once. Half the settings are consumed in `main.run` while it

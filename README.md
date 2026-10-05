@@ -69,6 +69,14 @@ $HOME                                  →  7 · Shell
   A topic fades within a minute of Auto Title stopping or of
   `HERDR_AUTO_TITLE_WORKSPACES=false`. A workspace name that an earlier Auto
   Title wrote, old task and all, stays until you rename or close the workspace.
+- To rename workspaces from their active tab instead, set
+  `HERDR_AUTO_TITLE_RENAME_WORKSPACES=true` in `config.env` and restart Auto
+  Title. Names include the project and omit the tab number, such as
+  `dashboard › Fix login`. Existing custom names and later manual renames are
+  protected. Clear a workspace name to hand it back to Auto Title.
+  Renaming freezes Herdr's built-in directory naming; disabling the option
+  leaves the last name in place. `$topic` reporting is independent, so set
+  `HERDR_AUTO_TITLE_WORKSPACES=false` if you only want workspace names.
 - On Windows, Herdr reports only the shell or an agent running in a pane, so an
   editor or an ssh or mosh session does not name its tab.
 
@@ -111,7 +119,8 @@ change. It does not read the config directory that `herdr plugin list` prints.
 | `HERDR_AUTO_TITLE_PREFER_AGENT` | `false`                                  | Name a tab after its agent pane even while another pane is focused |
 | `HERDR_AUTO_TITLE_PANE_ID`      | `false`                                  | Put the pane's Herdr ID in front of its label, as `[w1:p2] api`    |
 | `HERDR_AUTO_TITLE_WORKSPACES`   | `true`                                   | Report what each workspace's active tab is doing as its `topic`    |
-| `HERDR_AUTO_TITLE_WORKSPACE_MAX_LENGTH` | none: Herdr fits it              | Longest topic, in columns                                          |
+| `HERDR_AUTO_TITLE_RENAME_WORKSPACES` | `false`                         | Rename workspaces from their active tab                           |
+| `HERDR_AUTO_TITLE_WORKSPACE_MAX_LENGTH` | none: Herdr fits it              | Longest workspace name or topic, in columns                                          |
 | `HERDR_AUTO_TITLE_CLAUDE_DIRS`  | none                                     | Extra Claude config homes to search, `:`-separated                 |
 
 Turning `HERDR_AUTO_TITLE_TRANSCRIPT` off also drops the branch from a tab whose

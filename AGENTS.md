@@ -161,8 +161,9 @@ are only the facts that would otherwise mislead the code in silence.
 - **On Linux `pane.process_info` lists zombies**, with a `pid` and a `name` and
   no `argv` or `cwd`, so an idle pane would be named after a process that has
   exited; the state package drops them. On macOS Herdr leaves them out.
-- Auto Title uses six methods and no others: `session.snapshot`,
+- Auto Title uses seven methods and no others: `session.snapshot`,
   `pane.process_info`, `tab.rename`, `pane.rename`,
+  `workspace.rename` when `HERDR_AUTO_TITLE_RENAME_WORKSPACES=true`,
   `workspace.report_metadata` unless `HERDR_AUTO_TITLE_WORKSPACES=false`, and,
   from the restart action alone, `notification.show`.
 - **A pane carries no label until it has one, and an empty one clears it.**

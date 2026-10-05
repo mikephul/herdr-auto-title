@@ -30,6 +30,7 @@ const (
 	EnvPreferAgent = "HERDR_AUTO_TITLE_PREFER_AGENT"
 	EnvPaneID      = "HERDR_AUTO_TITLE_PANE_ID"
 
+	EnvRenameWorkspaces   = "HERDR_AUTO_TITLE_RENAME_WORKSPACES"
 	EnvWorkspaces         = "HERDR_AUTO_TITLE_WORKSPACES"
 	EnvWorkspaceMaxLength = "HERDR_AUTO_TITLE_WORKSPACE_MAX_LENGTH"
 
@@ -86,8 +87,10 @@ type Config struct {
 	// `topic` token. Herdr draws it only where the user's sidebar rows ask for
 	// `$topic`, and the label is never touched.
 	ReportWorkspaces bool
-	// WorkspaceMaxLength bounds a topic, in columns. Zero, the default, leaves
-	// the fitting to Herdr, which knows how wide the sidebar is.
+	// RenameWorkspaces opts into following the active tab with the workspace label.
+	RenameWorkspaces bool
+	// WorkspaceMaxLength bounds workspace names and topics, in columns. Zero
+	// leaves fitting to Herdr, which knows how wide the sidebar is.
 	WorkspaceMaxLength int
 	// ClaudeDirs are the configuration homes to read transcripts from, in
 	// search order: the one CLAUDE_CONFIG_DIR gives, then any EnvClaudeDirs
@@ -142,6 +145,7 @@ func LoadConfig() (Config, []string) {
 	cfg.RenamePanes = fromEnv(&warnings, EnvPanes, cfg.RenamePanes, boolean)
 	cfg.PreferAgentPane = fromEnv(&warnings, EnvPreferAgent, cfg.PreferAgentPane, boolean)
 	cfg.ShowPaneID = fromEnv(&warnings, EnvPaneID, cfg.ShowPaneID, boolean)
+	cfg.RenameWorkspaces = fromEnv(&warnings, EnvRenameWorkspaces, cfg.RenameWorkspaces, boolean)
 	cfg.ReportWorkspaces = fromEnv(&warnings, EnvWorkspaces, cfg.ReportWorkspaces, boolean)
 	cfg.WorkspaceMaxLength = fromEnv(
 		&warnings,

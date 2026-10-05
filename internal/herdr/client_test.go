@@ -499,3 +499,34 @@ func TestErrorCode(t *testing.T) {
 		t.Errorf("ErrorCode of a plain error = %q, want empty", got)
 	}
 }
+
+func TestRenameWorkspaceSendsTheWorkspaceAndLabel(t *testing.T) {
+	t.Parallel()
+
+	srv := newTestServer(t, func(req incoming) string {
+		return `{"id":"` + req.ID + `","result":{"type":"workspace_info"}}`
+	})
+	if err := RenameWorkspace(
+		t.Context(),
+		srv.client(),
+		"wE",
+		"dashboard › Fix login",
+	); err != nil {
+		t.Fatalf("RenameWorkspace: %v", err)
+	}
+
+	seen := srv.seen()
+	if len(seen) != 1 || seen[0].Method != MethodWorkspaceRename {
+		t.Fatalf("server saw %+v, want one workspace.rename", seen)
+	}
+
+	var params map[string]string
+	if err := json.Unmarshal(seen[0].Params, &params); err != nil {
+		t.Fatalf("decode params: %v", err)
+	}
+
+	if len(params) != 2 || params["workspace_id"] != "wE" ||
+		params["label"] != "dashboard › Fix login" {
+		t.Errorf("params = %+v, want workspace_id and label", params)
+	}
+}

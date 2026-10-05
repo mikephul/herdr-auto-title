@@ -225,3 +225,12 @@ func ReportWorkspaceTopic(
 
 	return c.Call(ctx, MethodWorkspaceReportMetadata, params, nil)
 }
+
+func RenameWorkspace(ctx context.Context, c Client, id, label string) error {
+	return c.Call(
+		ctx,
+		MethodWorkspaceRename,
+		WorkspaceRenameParams{WorkspaceID: id, Label: label},
+		nil,
+	)
+}

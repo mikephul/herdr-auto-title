@@ -1,6 +1,6 @@
 // Package app polls the Herdr session and keeps every tab's title in step with
 // what that tab is doing, each pane's label too unless the configuration turns
-// that off, and reports what each workspace's active tab is doing as its topic.
+// that off. Workspace topics are reported and labels can be renamed on opt-in.
 package app
 
 import (
@@ -35,9 +35,10 @@ type Instance interface {
 type App struct {
 	// pollEvery is how often the session is read, which is all the loop itself
 	// decides anything by.
-	pollEvery time.Duration
-	log       *slog.Logger
-	titles    resolver.TitleResolver
+	pollEvery  time.Duration
+	log        *slog.Logger
+	workspaces *resolver.Workspaces
+	titles     resolver.TitleResolver
 	// panes names each pane of a tab as well as the tab itself, and is nil
 	// when the user turned that off.
 	panes resolver.PaneResolver
@@ -71,7 +72,15 @@ func New(
 	topics *resolver.Topics,
 	instance Instance,
 ) *App {
+	var workspaces *resolver.Workspaces
+	if cfg.RenameWorkspaces {
+		workspaces = resolver.NewWorkspaces(resolver.Options{
+			BranchMax: cfg.BranchMax, HideAgentName: !cfg.ShowAgentName, Home: cfg.Home,
+		}, cfg.WorkspaceMaxLength)
+	}
+
 	return &App{
+		workspaces:  workspaces,
 		pollEvery:   cfg.Poll,
 		log:         log,
 		titles:      titles,
@@ -241,6 +250,10 @@ func (a *App) readAndRename(ctx context.Context, client herdr.Client) error {
 	a.manual.Tabs.Retain(labelsIn(snapshot.Tabs))
 	a.manual.Panes.Retain(paneLabelsIn(snapshot.Panes))
 
+	if a.workspaces != nil {
+		a.manual.Workspaces.Retain(workspaceLabelsIn(snapshot.Workspaces))
+	}
+
 	tabs := a.tabsIn(snapshot)
 	poll := a.reads.Poll(client, snapshot.Panes, drew)
 
@@ -254,6 +267,10 @@ func (a *App) readAndRename(ctx context.Context, client herdr.Client) error {
 		if a.panes != nil {
 			a.namePanes(ctx, client, poll, tab)
 		}
+	}
+
+	if a.workspaces != nil {
+		a.nameWorkspaces(ctx, client, poll, snapshot, tabs)
 	}
 
 	if a.topics != nil {
@@ -456,6 +473,9 @@ var (
 		rename: herdr.RenameTab,
 		gone:   herdr.CodeTabNotFound,
 	}
+	workspaceLabels = labelKind{
+		noun: "workspace", rename: herdr.RenameWorkspace, gone: herdr.CodeWorkspaceNotFound,
+	}
 	paneLabels = labelKind{
 		noun:   "pane",
 		rename: herdr.RenamePane,
@@ -463,7 +483,7 @@ var (
 	}
 )
 
-// apply gives a tab or a pane the name the resolver chose, unless
+// apply gives a tab, pane or workspace the name the resolver chose, unless
 // the user put the label it carries there. Nothing that goes wrong here is
 // worth cutting the poll short: the next one decides again from state read again.
 func (a *App) apply(

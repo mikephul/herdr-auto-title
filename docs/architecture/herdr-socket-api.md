@@ -155,7 +155,8 @@ whatever labels it has; the local instance cannot see it to name it.
 
 ## The methods Auto Title uses
 
-Six, and no others (`internal/herdr/client.go`), `workspace.report_metadata`
+Seven, and no others (`internal/herdr/client.go`), `workspace.rename` only
+when workspace renaming is enabled, and `workspace.report_metadata`
 unless workspace topics are turned off:
 
 - **`session.snapshot`** returns the whole session — every tab with its label,
@@ -197,9 +198,12 @@ unless workspace topics are turned off:
   "shown"}` and the user sees nothing, so the action's log is the only place
   its outcome can be read.
 
+- **`workspace.rename`** takes `{workspace_id, label}` and replaces the
+  workspace label when renaming is enabled. The call freezes Herdr's automatic
+  directory naming; the plugin protects manual labels separately.
 - **`workspace.report_metadata`** takes `{workspace_id, source, tokens,
   ttl_ms}`. Auto Title reports one token, `topic`, under the source
-  `herdr.auto-title`, and never renames a workspace: see what the call does
+  `herdr.auto-title`, and does not itself rename a workspace: see what the call does
   [below](#what-the-objects-carry) and when it is made in
   [the poll loop](./poll-loop.md#the-workspace-topic).
 
@@ -412,3 +416,12 @@ reads, so this section describes Herdr rather than those types.
   `tab_id` and an `insert_index` and reorders within the tab's workspace,
   ignoring any other field; `workspace.move` reorders the workspace list. Both
   kept the id, and neither CLI offers a move.
+
+## Workspace rename probe on 0.9.3
+
+On Herdr 0.9.3, protocol 22, `workspace.rename` accepted
+`{workspace_id, label}` over the socket and returned a `workspace_info` result.
+A temporary workspace created without focus in `/tmp` initially carried the
+label `tmp`; sending `auto-title rename probe` changed the label returned by
+`workspace.get` to exactly that string. The workspace was then closed. Auto
+Title calls this method only with workspace renaming enabled.

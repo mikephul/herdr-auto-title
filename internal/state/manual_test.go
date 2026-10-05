@@ -3,7 +3,6 @@ package state
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/kryptamine/herdr-auto-title/internal/herdr"
@@ -289,7 +288,7 @@ func TestAnUnreadableStoreIsNotFatal(t *testing.T) {
 }
 
 // A file an earlier version saved still carries its workspace keys. They must
-// not cost the tab and pane locks beside them, and go at the next save.
+// not cost the tab and pane locks beside them, and survive the next save.
 func TestAFileWithWorkspaceLocksStillLoads(t *testing.T) {
 	t.Parallel()
 
@@ -302,7 +301,7 @@ func TestAFileWithWorkspaceLocksStillLoads(t *testing.T) {
 	}
 
 	m := LoadManual(path)
-	if !m.Tabs.Locked("wE:t1") || !m.Panes.Locked("wE:p1") {
+	if !m.Tabs.Locked("wE:t1") || !m.Panes.Locked("wE:p1") || !m.Workspaces.Locked("wE") {
 		t.Fatal("the tab and pane locks were lost with the workspace keys")
 	}
 
@@ -313,8 +312,9 @@ func TestAFileWithWorkspaceLocksStillLoads(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 
-	if strings.Contains(string(raw), "workspaces") {
-		t.Errorf("the saved file still carries workspace keys: %s", raw)
+	reloaded := LoadManual(path)
+	if !reloaded.Workspaces.Locked("wE") || reloaded.Workspaces.written["wE"] != "x" {
+		t.Errorf("the saved file lost workspace claims: %s", raw)
 	}
 }
 

@@ -61,13 +61,13 @@ func ErrorCode(err error) string {
 	return ""
 }
 
-// Method names used by Auto Title: two to read the session, three to act on
-// it, and one to tell the user how a restart went.
+// Method names used by Auto Title, including optional workspace renaming.
 const (
 	MethodSessionSnapshot         = "session.snapshot"
 	MethodPaneProcessInfo         = "pane.process_info"
 	MethodTabRename               = "tab.rename"
 	MethodPaneRename              = "pane.rename"
+	MethodWorkspaceRename         = "workspace.rename"
 	MethodWorkspaceReportMetadata = "workspace.report_metadata"
 	MethodNotificationShow        = "notification.show"
 )
@@ -79,6 +79,11 @@ type PaneTarget struct {
 type TabRenameParams struct {
 	TabID string `json:"tab_id"`
 	Label string `json:"label"`
+}
+
+type WorkspaceRenameParams struct {
+	WorkspaceID string `json:"workspace_id"`
+	Label       string `json:"label"`
 }
 
 type PaneRenameParams struct {

@@ -331,7 +331,8 @@ is nothing left running.
 A poll ends by reporting what each workspace's active tab is doing as the
 workspace's `topic` token (`workspace.report_metadata`), which Herdr draws
 wherever the user's `ui.sidebar.spaces.rows` ask for `$topic`. The label is
-never touched: Herdr keeps an unnamed workspace's label on its pane's directory
+left alone unless workspace renaming is enabled: Herdr keeps an unnamed
+workspace's label on its pane's directory
 by itself, and any rename would freeze it there. Going last matters only to a
 poll cut short: a topic is what such a poll gives up, not a tab.
 
@@ -370,3 +371,17 @@ spends the same read twice. The exception is a tab the user has claimed, which
 is not read for its own sake: with pane naming off, a topic above one costs the
 pane read that tab did not; with it on, as it ships, that pane is already read
 for the panes it names, so the topic still costs nothing.
+
+## Optional workspace renaming
+
+With `HERDR_AUTO_TITLE_RENAME_WORKSPACES=true`, the poll names workspaces after
+naming tabs and panes and before reporting topics. It uses each workspace's
+`active_tab_id`, falling back to its first tab if the id is absent or stale.
+A workspace with no context pane is skipped. Reads are shared with tab, pane
+and topic resolution through the same `reads.Poll`.
+
+Workspace labels use the same apply path as tab and pane labels, including
+`workspace_not_found` handling, retries and claims for unanswered requests.
+Manual workspace claims are retained against the snapshot's labels, and the
+poll settles them only after the workspace pass. Reporting `$topic` remains
+independent of label ownership.
