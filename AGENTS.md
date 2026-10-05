@@ -2,7 +2,7 @@
 
 Herdr Auto Title — a Herdr plugin, written in Go, that generates tab titles from
 each tab's current context. Long-running process that polls the Herdr session,
-no LLM and no external service.
+no LLM. An opt-in GitHub lookup adds open PR numbers.
 
 ## Repository layout
 
@@ -15,6 +15,7 @@ internal/reads        what a snapshot cannot say about a pane, once per poll
 internal/resolver     that state turned into a title, one source at a time
 internal/claude       what a Claude Code session is about, from its transcript
 internal/git          what a repository has checked out, read from .git
+internal/pr           an optional cached GitHub PR number lookup through gh
 scripts/              the Python probes
 docs/architecture/    how the plugin works and why
 ```

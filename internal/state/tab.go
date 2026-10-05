@@ -55,6 +55,8 @@ type PaneState struct {
 	// AgentDir is the directory that checkout was read from, which a pane
 	// holding no repository of its own has nothing else to judge by.
 	AgentDir string
+	// PRNumber is the open pull request for the checkout this pane speaks for.
+	PRNumber int
 
 	Focused bool
 	// ChangedAt is when a poll last saw this pane's revision advance.

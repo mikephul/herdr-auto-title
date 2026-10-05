@@ -37,6 +37,7 @@ func isolate(t *testing.T) {
 		EnvDebug, EnvPoll, EnvMaxLength, EnvBranchMax,
 		EnvPosition, EnvManual, EnvTranscript, EnvAgentName, EnvPanes,
 		EnvPreferAgent, EnvPaneID, EnvRenameWorkspaces, EnvWorkspaces, EnvWorkspaceMaxLength,
+		EnvPRNumbers,
 		// Claude Code's own variable is cleared with ours: it now decides a
 		// Config field, so a developer's real home would otherwise be read.
 		EnvClaudeDirs, EnvClaudeConfigDir,
@@ -112,6 +113,10 @@ func TestLoadConfigDefaults(t *testing.T) {
 		t.Error("pane IDs are shown by default")
 	}
 
+	if cfg.PRNumbers {
+		t.Error("PR numbers are shown by default")
+	}
+
 	if home, _ := os.UserHomeDir(); cfg.Home != home {
 		t.Errorf("home = %q, want %q", cfg.Home, home)
 	}
@@ -181,6 +186,7 @@ func TestLoadConfigFromEnvironment(t *testing.T) {
 	t.Setenv(EnvPoll, "250")
 	t.Setenv(EnvMaxLength, "32")
 	t.Setenv(EnvBranchMax, "20")
+	t.Setenv(EnvPRNumbers, "true")
 
 	cfg, warnings := LoadConfig()
 	if len(warnings) != 0 {
@@ -201,6 +207,10 @@ func TestLoadConfigFromEnvironment(t *testing.T) {
 
 	if cfg.BranchMax != 20 {
 		t.Errorf("branch max = %d, want 20", cfg.BranchMax)
+	}
+
+	if !cfg.PRNumbers {
+		t.Error("PR numbers are off despite being enabled")
 	}
 }
 

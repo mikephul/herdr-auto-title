@@ -77,6 +77,12 @@ $HOME                                  →  7 · Shell
   Renaming freezes Herdr's built-in directory naming; disabling the option
   leaves the last name in place. `$topic` reporting is independent, so set
   `HERDR_AUTO_TITLE_WORKSPACES=false` if you only want workspace names.
+- To show an open GitHub PR number, install and authenticate `gh` on the machine
+  running Auto Title, then set `HERDR_AUTO_TITLE_PR_NUMBERS=true` in `config.env`
+  and restart it. A tab becomes `1 · [#663] trade › Fix login`; with workspace
+  renaming enabled, its active workspace becomes `[#663] Fix login`. Without an
+  open PR, the tab keeps its usual title and the workspace shows `Fix login`.
+  Lookups are cached, and a failed lookup leaves the last known number in place.
 - On Windows, Herdr reports only the shell or an agent running in a pane, so an
   editor or an ssh or mosh session does not name its tab.
 
@@ -118,6 +124,7 @@ change. It does not read the config directory that `herdr plugin list` prints.
 | `HERDR_AUTO_TITLE_PANES`        | `true`                                   | Name panes as well as tabs                                         |
 | `HERDR_AUTO_TITLE_PREFER_AGENT` | `false`                                  | Name a tab after its agent pane even while another pane is focused |
 | `HERDR_AUTO_TITLE_PANE_ID`      | `false`                                  | Put the pane's Herdr ID in front of its label, as `[w1:p2] api`    |
+| `HERDR_AUTO_TITLE_PR_NUMBERS`   | `false`                                  | Prefix tab and workspace names with an open GitHub PR number        |
 | `HERDR_AUTO_TITLE_WORKSPACES`   | `true`                                   | Report what each workspace's active tab is doing as its `topic`    |
 | `HERDR_AUTO_TITLE_RENAME_WORKSPACES` | `false`                         | Rename workspaces from their active tab                           |
 | `HERDR_AUTO_TITLE_WORKSPACE_MAX_LENGTH` | none: Herdr fits it              | Longest workspace name or topic, in columns                                          |

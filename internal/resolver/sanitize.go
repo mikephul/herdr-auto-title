@@ -107,6 +107,10 @@ func truncate(s string, maxWidth int) string {
 // name to fit. It returns name alone when the prefix would leave it no room:
 // a label reduced to its prefix has lost more than the prefix is worth.
 func withPrefix(prefix, name string, maxWidth int) string {
+	if maxWidth <= 0 {
+		return prefix + name
+	}
+
 	room := maxWidth - uniseg.StringWidth(prefix)
 	// truncate takes a width of zero as "no bound at all".
 	if room <= 0 {

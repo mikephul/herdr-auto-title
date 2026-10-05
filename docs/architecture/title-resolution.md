@@ -523,6 +523,15 @@ alternating between a full title and a title with its project removed. The
 agent-name and branch settings apply, and `WORKSPACE_MAX_LENGTH` bounds the
 label only when configured. An empty resolution leaves the label alone.
 
+With `HERDR_AUTO_TITLE_PR_NUMBERS=true`, a workspace keeps the active tab's
+activity but drops its directory and branch. The matching tab keeps the
+directory and gains `[#663]` after its position, while the workspace reads
+`[#663] Fix login`. Without an open PR the tab is unchanged and the workspace
+reads `Fix login`. If there is no activity, the workspace falls back to its
+ordinary name. The PR comes from the agent's checkout when it has one, then
+the pane's own checkout; it never comes from a branch name or terminal text.
+The lookup is described in [configuration](./configuration.md#why-pr-numbers-are-opt-in).
+
 ## The workspace is not repeated
 
 Herdr shows the workspace above its tabs, so a tab in the workspace it is named

@@ -190,6 +190,16 @@ by the plugin are persisted beside manual locks so restarting with a changed
 active tab does not mistake its predecessor's label for a manual name. See
 [manual rename protection](./manual-rename-protection.md#workspace-names).
 
+## Why PR numbers are opt-in
+
+`HERDR_AUTO_TITLE_PR_NUMBERS=true` uses an authenticated `gh` on the machine
+running Auto Title. The checked-out branch alone has no PR number, so this is
+the one feature that contacts an external service. The lookup is limited to
+one uncached branch per poll and two seconds, with positive answers cached for
+five minutes and misses for one minute. A failed lookup keeps the last known
+number and retries after thirty seconds. Without `gh` or authentication, the
+ordinary title remains usable.
+
 ## Why it is not reread
 
 The file is read once. Half the settings are consumed in `main.run` while it

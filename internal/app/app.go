@@ -77,6 +77,7 @@ func New(
 		workspaces = resolver.NewWorkspaces(resolver.Options{
 			BranchMax: cfg.BranchMax, HideAgentName: !cfg.ShowAgentName, Home: cfg.Home,
 		}, cfg.WorkspaceMaxLength)
+		workspaces.PRNumbers = cfg.PRNumbers
 	}
 
 	return &App{
@@ -94,6 +95,7 @@ func New(
 			ClaudeDirs:      cfg.ClaudeDirs,
 			BranchMax:       cfg.BranchMax,
 			ReadTranscripts: cfg.ReadTranscripts,
+			PRNumbers:       cfg.PRNumbers,
 		}, log),
 		instance: instance,
 	}
@@ -114,8 +116,12 @@ func Resolvers(
 	})
 
 	var titles resolver.TitleResolver = chain
+	if cfg.PRNumbers {
+		titles = resolver.NewPRTitles(titles, cfg.MaxLength)
+	}
+
 	if cfg.ShowPosition {
-		titles = resolver.NewNumbered(chain, cfg.MaxLength)
+		titles = resolver.NewNumbered(titles, cfg.MaxLength)
 	}
 
 	topics := topicsFor(cfg)

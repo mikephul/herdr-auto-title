@@ -124,6 +124,12 @@ linters:
 
   exclusions:
     rules:
+      # This reader alone invokes gh with argument-separated values; it never
+      # runs a shell or sends a rename outside the Herdr socket.
+      - path: internal/pr/reader\.go
+        linters:
+          - depguard
+          - forbidigo
       # A test writes fixtures into its own temporary directory and closes a
       # listener it owns; neither is the file permission or missing context
       # these two are looking for.

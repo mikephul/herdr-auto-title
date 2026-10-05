@@ -29,6 +29,7 @@ const (
 	EnvPanes       = "HERDR_AUTO_TITLE_PANES"
 	EnvPreferAgent = "HERDR_AUTO_TITLE_PREFER_AGENT"
 	EnvPaneID      = "HERDR_AUTO_TITLE_PANE_ID"
+	EnvPRNumbers   = "HERDR_AUTO_TITLE_PR_NUMBERS"
 
 	EnvRenameWorkspaces   = "HERDR_AUTO_TITLE_RENAME_WORKSPACES"
 	EnvWorkspaces         = "HERDR_AUTO_TITLE_WORKSPACES"
@@ -83,6 +84,8 @@ type Config struct {
 	// a script or another agent addresses that pane by. Inert without
 	// RenamePanes.
 	ShowPaneID bool
+	// PRNumbers looks up open GitHub PRs for checked-out branches.
+	PRNumbers bool
 	// ReportWorkspaces reports what each workspace's active tab is doing as its
 	// `topic` token. Herdr draws it only where the user's sidebar rows ask for
 	// `$topic`, and the label is never touched.
@@ -145,6 +148,7 @@ func LoadConfig() (Config, []string) {
 	cfg.RenamePanes = fromEnv(&warnings, EnvPanes, cfg.RenamePanes, boolean)
 	cfg.PreferAgentPane = fromEnv(&warnings, EnvPreferAgent, cfg.PreferAgentPane, boolean)
 	cfg.ShowPaneID = fromEnv(&warnings, EnvPaneID, cfg.ShowPaneID, boolean)
+	cfg.PRNumbers = fromEnv(&warnings, EnvPRNumbers, cfg.PRNumbers, boolean)
 	cfg.RenameWorkspaces = fromEnv(&warnings, EnvRenameWorkspaces, cfg.RenameWorkspaces, boolean)
 	cfg.ReportWorkspaces = fromEnv(&warnings, EnvWorkspaces, cfg.ReportWorkspaces, boolean)
 	cfg.WorkspaceMaxLength = fromEnv(

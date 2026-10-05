@@ -10,6 +10,7 @@ import (
 	"github.com/kryptamine/herdr-auto-title/internal/claude"
 	"github.com/kryptamine/herdr-auto-title/internal/git"
 	"github.com/kryptamine/herdr-auto-title/internal/herdr"
+	"github.com/kryptamine/herdr-auto-title/internal/pr"
 	"github.com/kryptamine/herdr-auto-title/internal/state"
 )
 
@@ -18,9 +19,10 @@ import (
 type Options struct {
 	// ClaudeDirs are the Claude Code configuration homes transcripts are found in.
 	ClaudeDirs []string
-	// BranchMax of zero or less turns branches off, and then no checkout is read.
+	// BranchMax of zero or less hides branches. PR lookups still need checkouts.
 	BranchMax       int
 	ReadTranscripts bool
+	PRNumbers       bool
 }
 
 // Reader outlives a poll because what it remembers does: what each pane was
@@ -31,16 +33,22 @@ type Reader struct {
 	log             *slog.Logger
 	readBranches    bool
 	readTranscripts bool
+	prs             *pr.Reader
 }
 
 func New(opts Options, log *slog.Logger) *Reader {
-	return &Reader{
+	reader := &Reader{
 		processes:       newProcessCache(),
 		topics:          claude.NewReader(opts.ClaudeDirs...),
 		log:             log,
-		readBranches:    opts.BranchMax > 0,
+		readBranches:    opts.BranchMax > 0 || opts.PRNumbers,
 		readTranscripts: opts.ReadTranscripts,
 	}
+	if opts.PRNumbers {
+		reader.prs = pr.New()
+	}
+
+	return reader
 }
 
 // Poll opens the reads of one poll over the snapshot's panes, forgetting what
@@ -61,10 +69,11 @@ func (r *Reader) Poll(client herdr.Client, panes []herdr.PaneInfo, drew map[stri
 // Poll is one poll's reads. It is a thing of its own so that what it memoizes
 // cannot outlast the poll that filled it.
 type Poll struct {
-	reader    *Reader
-	client    herdr.Client
-	checkouts map[string]git.Checkout
-	filled    map[*state.PaneState]struct{}
+	reader      *Reader
+	client      herdr.Client
+	checkouts   map[string]git.Checkout
+	filled      map[*state.PaneState]struct{}
+	prAttempted bool
 }
 
 // Fill supplies what the snapshot could not say about a pane, once per poll
@@ -96,7 +105,22 @@ func (p *Poll) Fill(ctx context.Context, pane *state.PaneState) {
 	pane.AgentTopic = topic.Text()
 	pane.Git = p.checkout(ctx, dir)
 	pane.AgentGit = p.checkout(ctx, topic.Dir)
+
 	pane.AgentDir = topic.Dir
+	if p.reader.prs != nil {
+		checkout, checkoutDir := pane.Git, pane.Dir
+		if pane.AgentGit.Branch != "" && pane.AgentDir != "" {
+			checkout, checkoutDir = pane.AgentGit, pane.AgentDir
+		}
+
+		number, fresh := p.reader.prs.Cached(checkout)
+		pane.PRNumber = number
+
+		if !fresh && !p.prAttempted && !spent(ctx) {
+			p.prAttempted = true
+			pane.PRNumber = p.reader.prs.Lookup(ctx, checkout, checkoutDir)
+		}
+	}
 }
 
 // processesOf reports what a pane is running, or false when Herdr gave no
