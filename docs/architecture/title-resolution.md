@@ -105,6 +105,11 @@ The richest source in practice, and the one that carries most agent context. Its
 value is cleaned hard before it is trusted — see
 [sanitization](./sanitization.md).
 
+Codex marks a blocked session with `[ . ] Action Required`. The standalone
+opening bracket would be dropped by location cleanup while the dot survives,
+leaving `. ] Action Required`. When Herdr also reports the agent as blocked,
+the terminal source turns that marker into `[!] Action Required` before cleanup.
+
 ### The session transcript
 
 An agent that has titled its terminal has already said what it is doing, sooner

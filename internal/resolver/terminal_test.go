@@ -37,6 +37,31 @@ func TestTerminalTitleBeatsTheWorkingDirectory(t *testing.T) {
 	}
 }
 
+func TestBlockedCodexTitleKeepsABalancedActionMarker(t *testing.T) {
+	t.Parallel()
+
+	pane := &state.PaneState{
+		Dir:           dashboard,
+		Agent:         "codex",
+		AgentStatus:   "blocked",
+		TerminalTitle: "[ . ] Action Required | Replace profiler mock data | trade",
+	}
+
+	got, ok := NewTerminalTitle().Resolve(pane)
+	if !ok || got.Activity != "[!] Action Required | Replace profiler mock data | trade" {
+		t.Errorf("activity = %q, found = %v", got.Activity, ok)
+	}
+
+	workspaces := NewWorkspaces(Options{HideAgentName: true}, 0)
+
+	workspaces.PRNumbers = true
+	if got := workspaces.Resolve(
+		pane,
+	).Name; got != "[!] Action Required | Replace profiler mock data | trade" {
+		t.Errorf("workspace = %q", got)
+	}
+}
+
 func TestGenericTerminalTitleFallsThrough(t *testing.T) {
 	t.Parallel()
 

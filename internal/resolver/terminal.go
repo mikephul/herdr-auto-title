@@ -1,6 +1,10 @@
 package resolver
 
-import "github.com/kryptamine/herdr-auto-title/internal/state"
+import (
+	"strings"
+
+	"github.com/kryptamine/herdr-auto-title/internal/state"
+)
 
 // TerminalTitle derives the activity from the pane's terminal title: a title a
 // program went out of its way to set usually says what is happening. A lone
@@ -28,6 +32,13 @@ func (s TerminalTitle) Resolve(pane *state.PaneState) (Parts, bool) {
 	title := pane.TerminalTitle
 	if title == "" {
 		title = pane.TerminalTitleRaw
+	}
+
+	if pane.AgentStatus == "blocked" {
+		// Codex's spaced marker loses its opening bracket in location cleanup.
+		if rest, ok := strings.CutPrefix(strings.TrimSpace(title), "[ . ] Action Required"); ok {
+			title = "[!] Action Required" + rest
+		}
 	}
 
 	// A shell titles its window with the command it runs, so until the remote
